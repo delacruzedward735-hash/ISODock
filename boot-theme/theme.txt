@@ -1,0 +1,74 @@
+# IsoDock GRUB theme — production boot UI
+# The background contains only the visual shell; ISO filenames are rendered
+# dynamically by the boot engine from the actual files on the USB drive.
+desktop-image: "background.png"
+title-text: " "
+title-color: "#ffffff"
+message-color: "#eaf3ff"
+terminal-box: "terminal_box_*.png"
+
++ boot_menu {
+  left = 13%
+  width = 72%
+  top = 40%
+  height = 39%
+
+  menu_pixmap_style = "menu_*.png"
+
+  item_color = "#f3f7fc"
+  item_height = 34
+  item_spacing = 3
+  item_padding = 3
+
+  selected_item_color = "#ffffff"
+  selected_item_pixmap_style = "select_*.png"
+  item_icon_space = 0
+
+  scrollbar = true
+  scrollbar_width = 10
+  scrollbar_thumb = "slider_*.png"
+}
+
++ progress_bar {
+  id = "__timeout__"
+  text = "@TIMEOUT_NOTIFICATION_SHORT@"
+  left = 35%
+  width = 30%
+  top = 88%
+  text_color = "#4eb3ff"
+  bar_style = "*"
+  highlight_style = "*"
+}
+
+# Real engine shortcut text, localized by the engine, positioned on the
+# dedicated footer bar from the IsoDock background.
++ hbox {
+  left = 4%
+  top = 94%
+  width = 92%
+  height = 24
+  + label { text = "@VTOY_HOTKEY_TIP@" color = "#edf6ff" align = "center" }
+}
+
+# These mode indicators stay hidden until the corresponding mode is active.
++ hbox {
+  left = 6%
+  top = 89%
+  width = 26%
+  height = 20
+  + label { text = "@VTOY_MEM_DISK@" color = "#ffd166" align = "left" }
+}
++ hbox {
+  left = 37%
+  top = 89%
+  width = 26%
+  height = 20
+  + label { text = "@VTOY_ISO_RAW@" color = "#ffd166" align = "center" }
+}
++ hbox {
+  left = 68%
+  top = 89%
+  width = 26%
+  height = 20
+  + label { text = "@VTOY_GRUB2_MODE@" color = "#ffd166" align = "right" }
+}

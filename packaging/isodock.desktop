@@ -1,0 +1,12 @@
+[Desktop Entry]
+Type=Application
+Name=IsoDock
+GenericName=Bootable USB Manager
+Comment=Install or update a multiboot USB drive
+Exec=isodock
+Icon=isodock
+Terminal=false
+Categories=System;Utility;
+Keywords=USB;Boot;ISO;Multiboot;Ventoy;
+StartupNotify=true
+StartupWMClass=Ventoy2Disk.gtk3

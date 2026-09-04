@@ -1,0 +1,272 @@
+#!/usr/bin/env bash
+set -uo pipefail
+
+APP_VERSION="1.0.0"
+PACKAGE_REVISION="6"
+ENGINE_VERSION="1.1.17"
+RUNTIME="${ISODOCK_RUNTIME:-/usr/lib/isodock/engine/$ENGINE_VERSION}"
+GUI="$RUNTIME/VentoyGUI.x86_64"
+GTKGUI="$RUNTIME/tool/x86_64/Ventoy2Disk.gtk3"
+VTOYCLI="$RUNTIME/tool/x86_64/vtoycli"
+CONFIG_DIR="${XDG_CONFIG_HOME:-$HOME/.config}/isodock"
+CACHE_DIR="${XDG_CACHE_HOME:-$HOME/.cache}/isodock"
+CONFIG="$CONFIG_DIR/isodock.ini"
+LOG="$CACHE_DIR/native-gui.log"
+MANIFEST="$RUNTIME/RUNTIME-SHA256SUMS.txt"
+
+usage() {
+cat <<USAGE
+IsoDock $APP_VERSION (package revision $PACKAGE_REVISION)
+Bootable USB Manager for Linux
+Ventoy engine $ENGINE_VERSION
+
+Usage:
+  isodock                  Open IsoDock
+  isodock --doctor         Verify runtime, dependencies, boot image and branding
+  isodock --list           List USB/removable whole disks
+  isodock --version        Print IsoDock and engine versions
+  isodock --about          Show project/engine attribution
+  isodock --log            Print the native GUI log
+  isodock --reset-settings Reset per-user IsoDock settings
+  isodock --runtime        Print the packaged engine directory
+USAGE
+}
+
+ensure_user_state() {
+  umask 077
+  mkdir -p "$CONFIG_DIR" "$CACHE_DIR" || return 1
+  if [[ ! -f "$CONFIG" ]]; then
+    if [[ -f "$RUNTIME/Ventoy2Disk.ini" ]]; then
+      cp "$RUNTIME/Ventoy2Disk.ini" "$CONFIG" || return 1
+    else
+      : > "$CONFIG" || return 1
+    fi
+  fi
+  chmod 600 "$CONFIG" 2>/dev/null || true
+  touch "$LOG" || return 1
+  chmod 600 "$LOG" 2>/dev/null || true
+}
+
+list_disks() {
+  lsblk -dnpo NAME,SIZE,TRAN,RM,RO,MODEL 2>/dev/null | awk '($3=="usb" || $4==1) && $5==0 {print}'
+}
+
+show_error() {
+  local text="$1"
+  if command -v zenity >/dev/null 2>&1 && [[ -n "${DISPLAY:-}${WAYLAND_DISPLAY:-}" ]]; then
+    zenity --error --title='IsoDock' --width=560 --text="$text" 2>/dev/null || true
+  elif command -v notify-send >/dev/null 2>&1 && [[ -n "${DISPLAY:-}${WAYLAND_DISPLAY:-}" ]]; then
+    notify-send 'IsoDock could not start' "$text" 2>/dev/null || true
+  else
+    printf '%b\n' "$text" >&2
+  fi
+}
+
+about() {
+  local text
+  text="IsoDock $APP_VERSION\nBootable USB Manager for Linux\n\nVentoy open-source engine: $ENGINE_VERSION\nRebranded and packaged by CodeDev by Edward.\n\nIsoDock is an independent project and is not affiliated with or endorsed by the official Ventoy project.\n\nLicense/source notices: /usr/share/doc/isodock/"
+  if command -v zenity >/dev/null 2>&1 && [[ -n "${DISPLAY:-}${WAYLAND_DISPLAY:-}" ]]; then
+    zenity --info --title='About IsoDock' --width=560 --text="$text" 2>/dev/null || true
+  else
+    printf '%b\n' "$text"
+  fi
+}
+
+check_cmd() {
+  local cmd="$1"
+  if command -v "$cmd" >/dev/null 2>&1; then
+    echo "[ OK ] command: $cmd"
+  else
+    echo "[FAIL] missing command: $cmd"
+    return 1
+  fi
+}
+
+doctor() {
+  local fail=0 size tmpimg parsed
+  echo "IsoDock $APP_VERSION-$PACKAGE_REVISION"
+  echo "Ventoy engine: $ENGINE_VERSION"
+  echo "Runtime: $RUNTIME"
+  echo
+
+  case "$(uname -m)" in
+    x86_64|amd64) echo "[ OK ] CPU architecture: $(uname -m)" ;;
+    *) echo "[FAIL] This package supports amd64/x86_64 only"; fail=1 ;;
+  esac
+
+  for cmd in bash lsblk findmnt mount umount sync parted fdisk mkfs.vfat udevadm pkexec xz sha256sum stat; do
+    check_cmd "$cmd" || fail=1
+  done
+
+  for f in "$GUI" "$GTKGUI" "$VTOYCLI" \
+           "$RUNTIME/tool/VentoyWorker.sh" \
+           "$RUNTIME/tool/ventoy_lib.sh" \
+           "$RUNTIME/boot/boot.img" \
+           "$RUNTIME/boot/core.img.xz" \
+           "$RUNTIME/ventoy/ventoy.disk.img.xz"; do
+    if [[ -s "$f" ]]; then
+      echo "[ OK ] engine: ${f#$RUNTIME/}"
+    else
+      echo "[FAIL] missing/empty: ${f#$RUNTIME/}"
+      fail=1
+    fi
+  done
+
+  if [[ -x "$GUI" && -x "$GTKGUI" && -x "$VTOYCLI" ]]; then
+    echo "[ OK ] native executable permissions"
+  else
+    echo "[FAIL] native executable permission"
+    fail=1
+  fi
+
+  if command -v ldd >/dev/null 2>&1; then
+    if ldd "$GTKGUI" 2>&1 | grep 'not found' >/dev/null; then
+      echo "[FAIL] GTK3 GUI has missing shared libraries:"
+      ldd "$GTKGUI" 2>&1 | grep 'not found' || true
+      fail=1
+    else
+      echo "[ OK ] GTK3 native shared libraries"
+    fi
+  fi
+
+  if [[ $(stat -c %s "$RUNTIME/boot/boot.img" 2>/dev/null || echo 0) == 512 ]]; then
+    echo "[ OK ] boot.img: 512 bytes"
+  else
+    echo "[FAIL] boot.img has unexpected size"; fail=1
+  fi
+
+  if xz -t "$RUNTIME/boot/core.img.xz" >/dev/null 2>&1; then
+    size=$(xz -dc "$RUNTIME/boot/core.img.xz" | wc -c)
+    [[ "$size" == 1048064 ]] && echo "[ OK ] core.img.xz: valid 1,048,064-byte payload" || { echo "[FAIL] core image size: $size"; fail=1; }
+  else
+    echo "[FAIL] core.img.xz corrupt"; fail=1
+  fi
+
+  if xz -t "$RUNTIME/ventoy/ventoy.disk.img.xz" >/dev/null 2>&1; then
+    size=$(xz -dc "$RUNTIME/ventoy/ventoy.disk.img.xz" | wc -c)
+    [[ "$size" == 33554432 ]] && echo "[ OK ] VTOYEFI image: valid 32 MiB payload" || { echo "[FAIL] VTOYEFI image size: $size"; fail=1; }
+
+    if xz -dc "$RUNTIME/ventoy/ventoy.disk.img.xz" | grep -aF 'IsoDock 1.0.0  |  Ventoy Engine' >/dev/null; then
+      echo "[ OK ] IsoDock boot-menu branding payload"
+    else
+      echo "[FAIL] IsoDock boot-menu branding marker missing"; fail=1
+    fi
+
+    tmpimg=$(mktemp "${TMPDIR:-/tmp}/isodock-vtoyefi.XXXXXX") || tmpimg=""
+    if [[ -n "$tmpimg" ]]; then
+      if xz -dc "$RUNTIME/ventoy/ventoy.disk.img.xz" > "$tmpimg"; then
+        parsed=$("$VTOYCLI" fat "$tmpimg" 2>/dev/null || true)
+        if [[ "$parsed" == "$ENGINE_VERSION" ]]; then
+          echo "[ OK ] Ventoy FAT parser sees engine $ENGINE_VERSION"
+        else
+          echo "[FAIL] FAT parser engine version: ${parsed:-unreadable}"; fail=1
+        fi
+        if "$VTOYCLI" fat -s "$tmpimg" >/dev/null 2>&1; then
+          echo "[ OK ] Secure Boot support files present in VTOYEFI"
+        else
+          echo "[FAIL] Secure Boot support files missing in VTOYEFI"; fail=1
+        fi
+      else
+        echo "[FAIL] could not decompress VTOYEFI for parser checks"; fail=1
+      fi
+      rm -f "$tmpimg"
+    else
+      echo "[FAIL] could not create temporary file for VTOYEFI checks"; fail=1
+    fi
+  else
+    echo "[FAIL] ventoy.disk.img.xz corrupt"; fail=1
+  fi
+
+  if grep -F '>IsoDock<' "$RUNTIME/tool/VentoyGTK.glade" >/dev/null 2>&1; then
+    echo "[ OK ] IsoDock native window branding"
+  else
+    echo "[FAIL] IsoDock window branding missing"; fail=1
+  fi
+
+  if grep -F 'IsoDock In Package' "$RUNTIME/tool/languages.json" >/dev/null 2>&1; then
+    echo "[ OK ] IsoDock language branding"
+  else
+    echo "[FAIL] IsoDock language branding missing"; fail=1
+  fi
+
+  if grep -F 'Trying to umount source' "$RUNTIME/tool/ventoy_lib.sh" >/dev/null 2>&1 && \
+     grep -F 'umount --all-targets -- "$srcdev"' "$RUNTIME/tool/ventoy_lib.sh" >/dev/null 2>&1; then
+    echo "[ OK ] USB automount/space-in-label fix present"
+  else
+    echo "[FAIL] USB automount robustness patch missing"; fail=1
+  fi
+
+  if grep -F 'My Custom Menu' "$RUNTIME/plugin/ventoy/ventoy_grub.cfg" >/dev/null 2>&1 || \
+     grep -F 'auto_install' "$RUNTIME/plugin/ventoy/ventoy.json" >/dev/null 2>&1; then
+    echo "[FAIL] demo boot entries remain in production plugin template"; fail=1
+  else
+    echo "[ OK ] no fake/demo boot entries in plugin template"
+  fi
+
+  if [[ -s "$MANIFEST" ]]; then
+    if (cd "$RUNTIME" && sha256sum -c --quiet RUNTIME-SHA256SUMS.txt); then
+      echo "[ OK ] packaged runtime SHA-256 manifest"
+    else
+      echo "[FAIL] packaged runtime SHA-256 mismatch"; fail=1
+    fi
+  else
+    echo "[FAIL] runtime SHA-256 manifest missing"; fail=1
+  fi
+
+  if ensure_user_state; then
+    echo "[ OK ] per-user config: $CONFIG"
+    echo "[ OK ] per-user log: $LOG"
+  else
+    echo "[FAIL] could not initialize per-user state"; fail=1
+  fi
+
+  echo
+  if (( fail )); then
+    echo "Doctor result: FAILED"
+    return 1
+  fi
+  echo "Doctor result: PASS"
+}
+
+run_gui() {
+  local rc tailmsg
+  if [[ ! -x "$GUI" || ! -x "$GTKGUI" ]]; then
+    show_error "IsoDock engine files are missing. Reinstall IsoDock and run:\n\nisodock --doctor"
+    return 1
+  fi
+  if ! command -v pkexec >/dev/null 2>&1; then
+    show_error "pkexec is missing. Install PolicyKit/pkexec, then launch IsoDock again."
+    return 1
+  fi
+  if [[ -z "${DISPLAY:-}" && -z "${WAYLAND_DISPLAY:-}" ]]; then
+    echo "No graphical desktop session detected." >&2
+    return 1
+  fi
+  if ! ensure_user_state; then
+    show_error "IsoDock could not initialize its per-user configuration/log directory."
+    return 1
+  fi
+
+  : > "$LOG"
+  cd "$RUNTIME" || return 1
+  "$GUI" --gtk3 -l "$LOG" -i "$CONFIG"
+  rc=$?
+  if (( rc != 0 )); then
+    tailmsg=$(tail -n 16 "$LOG" 2>/dev/null || true)
+    show_error "IsoDock exited with code $rc.\n\n$tailmsg\n\nFull log: $LOG"
+  fi
+  return "$rc"
+}
+
+case "${1:-}" in
+  "") run_gui ;;
+  --doctor) doctor ;;
+  --list) list_disks ;;
+  --version) printf 'IsoDock %s-%s\nVentoy engine %s\n' "$APP_VERSION" "$PACKAGE_REVISION" "$ENGINE_VERSION" ;;
+  --about) about ;;
+  --log) cat "$LOG" 2>/dev/null || echo "No GUI log yet: $LOG" ;;
+  --runtime) echo "$RUNTIME" ;;
+  --reset-settings) rm -f "$CONFIG"; ensure_user_state; echo "IsoDock settings reset: $CONFIG" ;;
+  -h|--help) usage ;;
+  *) echo "Unknown option: $1" >&2; usage >&2; exit 2 ;;
+esac

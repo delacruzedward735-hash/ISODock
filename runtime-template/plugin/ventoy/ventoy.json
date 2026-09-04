@@ -1,0 +1,13 @@
+{
+  "control": [
+    { "VTOY_DEFAULT_MENU_MODE": "0" },
+    { "VTOY_FILT_DOT_UNDERSCORE_FILE": "1" }
+  ],
+  "theme": {
+    "file": "/ventoy/theme/theme.txt",
+    "display_mode": "GUI",
+    "ventoy_left": "2%",
+    "ventoy_top": "91%",
+    "ventoy_color": "#1599e8"
+  }
+}

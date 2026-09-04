@@ -1,0 +1,14 @@
+IsoDock 1.0.0-6
+================
+Bootable USB Manager for Linux.
+
+Ventoy engine: 1.1.17
+Independent downstream project; not affiliated with or endorsed by Ventoy.
+
+Commands:
+  isodock
+  isodock --doctor
+  isodock --list
+  isodock --about
+
+Source and license notices are distributed with the release.
