@@ -1,0 +1,38 @@
+name: IsoDock CI
+
+on:
+  push:
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  verify-and-build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            git gcc make xz-utils rsync dpkg-dev \
+            libgtk-3-0 util-linux fdisk parted dosfstools udev policykit-1 xvfb
+
+      - name: Prepare pinned upstream source
+        run: make prepare-upstream
+
+      - name: Verify source and runtime
+        run: make verify
+
+      - name: Build Debian package
+        run: make deb
+
+      - name: Upload Debian package
+        uses: actions/upload-artifact@v4
+        with:
+          name: isodock-deb
+          path: |
+            out/isodock_1.0.0-6_amd64.deb
+            out/isodock_1.0.0-6_amd64.deb.sha256

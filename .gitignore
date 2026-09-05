@@ -1,0 +1,12 @@
+/out/
+/build/
+/.cache/
+*.deb
+*.deb.sha256
+*.log
+*.tmp
+*.swp
+__pycache__/
+.DS_Store
+.idea/
+.vscode/

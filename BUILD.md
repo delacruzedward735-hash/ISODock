@@ -1,36 +1,61 @@
 # Building IsoDock
 
-## Fast package build
+IsoDock supports a lightweight package build from the committed runtime template and a full source-composition flow using the pinned Ventoy upstream source.
 
-The release package is reproducible offline from the shipped runtime template:
+## Dependencies
+
+Debian/Ubuntu/Zorin example:
+
+```bash
+sudo apt update
+sudo apt install -y \
+  git gcc make xz-utils rsync dpkg-dev \
+  libgtk-3-0 util-linux fdisk parted dosfstools udev policykit-1
+```
+
+Optional GUI smoke testing requires `xvfb`.
+
+## Verify committed source/runtime
 
 ```bash
 make verify
+```
+
+## Build `.deb`
+
+```bash
 make deb
 ```
 
-This creates `out/isodock_1.0.0-6_amd64.deb`.
+Output:
 
-## Rebuild the IsoDock boot theme
+```text
+out/isodock_1.0.0-6_amd64.deb
+```
 
-`IsoDock/scripts/rebuild-boot-image.sh` recompiles a small FAT16 helper against Ventoy's bundled `fat_io_lib`, updates the real VTOYEFI image, reads every modified file back, validates the Ventoy engine version and Secure Boot payload, then recompresses it with an XZ CRC32 check.
+## Fetch exact upstream source
+
+```bash
+make prepare-upstream
+```
+
+This checks out the commit pinned in `VERSION` under `.cache/upstream/Ventoy` and applies the IsoDock source changes.
+
+## Rebuild boot image
 
 ```bash
 make boot-image
+make verify
 ```
 
-This path does not need loop devices or privileged filesystem mounts.
+## Build complete corresponding-source archive
 
-## Rebuild native GTK GUI from source
+```bash
+make source-archive
+```
 
-The full modified upstream source is included under `Ventoy/`. Native GUI changes are in `Ventoy/LinuxGUI/Ventoy2Disk/`. Building that layer requires the upstream LinuxGUI toolchain and GTK3 development headers.
-
-The validated runtime binary is included under `IsoDock/runtime-template/` so Debian packaging does not depend on network downloads or a full cross-toolchain.
-
-## Release archive
+## Build release artifacts
 
 ```bash
 make release
 ```
-
-This produces the `.deb`, checksums and the complete corresponding source archive under `out/`.

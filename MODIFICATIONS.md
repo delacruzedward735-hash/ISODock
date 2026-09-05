@@ -1,12 +1,43 @@
 # IsoDock downstream modifications
 
-IsoDock retains Ventoy as the boot and disk-writing engine. Downstream changes are intentionally narrow and auditable.
+IsoDock 1.0.0-6 is based on Ventoy 1.1.17 and keeps the upstream disk/boot engine recognizable and attributable.
 
-1. **Native GTK branding** — window title, visible labels, translated display strings and application icon are branded IsoDock while internal compatibility identifiers remain unchanged.
-2. **Boot menu theme** — `INSTALL/grub/grub.cfg`, the Ventoy theme and VTOYEFI image carry IsoDock branding. The background contains no fake ISO entries; the real engine populates the list.
-3. **Boot choice cleanup** — no sample `My Custom Menu`, fake aliases or unattended-install demos are enabled in the production plugin template.
-4. **USB automount robustness** — `INSTALL/tool/ventoy_lib.sh` unmounts by block-device source, not escaped mountpoint text, then waits for udev and retries once. This addresses paths such as `/media/user/ZORIN\040OS\04018`.
-5. **Linux packaging** — FHS layout, per-user settings/logs, AppStream metadata, runtime integrity checks, `.deb` scripts and upgrade metadata.
-6. **Release tooling** — source verification, FAT image read-back validation, Secure Boot payload check, package build automation and CI.
+Pinned upstream commit:
 
-The Ventoy engine version remains 1.1.17 and is explicitly disclosed in diagnostics and licensing documentation.
+```text
+7cbdc5cf69935bcf1f085ae67f40e70ea7e74bae
+```
+
+## Downstream changes
+
+### Linux desktop integration
+
+- Rebranded the native GTK window title and visible package/device labels to IsoDock.
+- Replaced the GTK window icon with IsoDock artwork via reproducible `window_icon_data.c` generation.
+- Added Debian package, launcher, desktop entry, AppStream metadata, icons, logs/config paths, and diagnostics.
+
+### USB unmount robustness
+
+- Changed the Linux unmount path to operate on the block-device source (for example `/dev/sdc1`) instead of relying on an escaped mountpoint pathname from `/proc/mounts`.
+- Added a regression check for labels/mountpoints containing spaces.
+
+### Boot interface
+
+- Added the IsoDock GRUB/VTOYEFI background and selection/scrollbar assets.
+- Changed visible version text to identify `IsoDock 1.0.0` while retaining the Ventoy engine version.
+- Kept the real engine hotkeys and dynamic image listing.
+
+### Runtime template cleanup
+
+- Removed sample custom-menu and unattended-install examples from the production plugin template.
+- Added runtime SHA-256 manifests and source-derived checks.
+
+## Reproduction
+
+Run:
+
+```bash
+make prepare-upstream
+```
+
+The application of these changes is implemented by `scripts/apply-upstream-overrides.sh` using committed downstream assets and deterministic patch/application scripts.

@@ -1,18 +1,28 @@
-# IsoDock Security Notes
+# Security Policy
 
-- Disk writes require administrator authorization through Ventoy's native
-  PolicyKit/pkexec privilege flow.
-- The package does not install a setuid helper.
-- The engine runtime is package-owned under `/usr/lib/isodock`.
-- User preferences and logs are stored outside the package runtime under the
-  XDG config/cache directories.
-- `isodock --doctor` validates required commands, image sizes, XZ integrity,
-  GUI dependencies, branding markers, and a SHA-256 manifest of the shipped
-  runtime.
-- The mount handling patch unmounts selected USB partitions by block-device
-  source rather than escaped `/proc/mounts` paths, fixing labels containing
-  spaces and reducing the risk of writing to a still-mounted target.
+IsoDock writes boot structures and partitions to block devices, so security and target-device safety are release-critical.
 
-## Trust boundary
-IsoDock performs intentionally destructive block-device operations. Never run
-an untrusted build as administrator. Verify release checksums before install.
+## Supported version
+
+Security fixes are currently targeted at the latest IsoDock 1.0.x release line.
+
+## Reporting a vulnerability
+
+Please do **not** publish an exploit, destructive proof-of-concept, private device data, credentials, or security-sensitive logs in a public issue.
+
+Use the private contact route at:
+
+https://codedev-by-edward.myportfoliohub.online/contact
+
+Include:
+
+- affected IsoDock version;
+- Linux distribution and architecture;
+- impact and prerequisites;
+- minimal reproduction steps;
+- whether the behavior also exists in upstream Ventoy;
+- a proposed fix, if available.
+
+## Destructive-device bugs
+
+If a bug could write to the wrong disk, bypass a target check, or corrupt data, treat it as security-sensitive until reviewed. Reproduce only on disposable test media or virtual block devices.

@@ -1,0 +1,57 @@
+name: Bug report
+description: Report a reproducible IsoDock problem
+title: "[Bug]: "
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Do not test destructive issues on important disks. Use disposable media.
+  - type: input
+    id: version
+    attributes:
+      label: IsoDock version
+      placeholder: "1.0.0-6"
+    validations:
+      required: true
+  - type: input
+    id: distro
+    attributes:
+      label: Linux distribution / desktop
+      placeholder: "Zorin OS 18, GNOME"
+    validations:
+      required: true
+  - type: dropdown
+    id: area
+    attributes:
+      label: Area
+      options:
+        - GUI launch
+        - USB install
+        - USB update
+        - Boot menu
+        - ISO boot
+        - Packaging/build
+        - Other
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Reproduction steps
+      description: Include only safe, reproducible steps.
+    validations:
+      required: true
+  - type: textarea
+    id: doctor
+    attributes:
+      label: `isodock --doctor` output
+      render: shell
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected behavior
+  - type: textarea
+    id: actual
+    attributes:
+      label: Actual behavior

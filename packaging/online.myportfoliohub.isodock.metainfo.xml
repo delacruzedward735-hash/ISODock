@@ -7,16 +7,19 @@
   <summary>Bootable USB manager for Linux</summary>
   <description>
     <p>IsoDock provides a compact native GTK interface for installing and updating multiboot USB drives.</p>
-    <p>IsoDock is an independent rebrand and Linux packaging layer powered by the Ventoy 1.1.17 open-source engine.</p>
+    <p>IsoDock is an independent downstream project powered by the Ventoy 1.1.17 open-source engine.</p>
   </description>
   <launchable type="desktop-id">isodock.desktop</launchable>
   <provides><binary>isodock</binary></provides>
   <categories><category>System</category><category>Utility</category></categories>
   <developer id="online.myportfoliohub"><name>CodeDev by Edward</name></developer>
-  <url type="homepage">https://myportfoliohub.online/</url>
+  <url type="homepage">https://github.com/delacruzedward735-hash/ISODock</url>
+  <url type="bugtracker">https://github.com/delacruzedward735-hash/ISODock/issues</url>
+  <url type="vcs-browser">https://github.com/delacruzedward735-hash/ISODock</url>
+  <url type="contact">https://codedev-by-edward.myportfoliohub.online/contact</url>
   <releases>
-    <release version="1.0.0" date="2026-09-04">
-      <description><p>Production Linux packaging with per-user state, runtime verification, IsoDock branding and Ventoy engine 1.1.17.</p></description>
+    <release version="1.0.0" date="2026-09-05">
+      <description><p>Open-source release candidate with pinned upstream source workflow, runtime verification, IsoDock branding, and Ventoy engine 1.1.17.</p></description>
     </release>
   </releases>
 </component>

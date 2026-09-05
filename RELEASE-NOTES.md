@@ -1,30 +1,23 @@
-# IsoDock 1.0.0-6 Complete Source / Production Candidate
+# IsoDock 1.0.0-6 Release Notes
 
-Engine: Ventoy 1.1.17  
-Architecture: amd64 / x86_64
+IsoDock 1.0.0-6 is the first source tree prepared specifically for public open-source collaboration.
 
-## Main changes
+## Highlights
 
-- Final approved silver/blue IsoDock boot visual integrated into the real VTOYEFI image.
-- Background contains no fake ISO names; the engine renders the actual USB image list dynamically.
-- Real blue gradient selected-row asset embedded in the boot image.
-- Real blue scrollbar assets embedded in the boot image.
-- Boot menu geometry refined to align with the approved mockup while staying firmware-safe.
-- Real engine hotkey tip remains dynamic/localized: L Language, F1 Help, F2 Browse, F3 List/Tree, F4 Localboot, F5 Tools, F6 Menu.
-- Complete read-back tests verify the embedded background, theme, selection bar, scrollbars and grub.cfg.
-- Secure Boot payload, BIOS/UEFI engine files, native GTK3 writer and USB automount-space fix are retained.
-- Complete corresponding source, Debian packaging, diagnostics, CI and license notices are included.
+- Native GTK3 Linux installer/updater interface.
+- Ventoy engine 1.1.17 pinned to upstream commit `7cbdc5cf69935bcf1f085ae67f40e70ea7e74bae`.
+- Final IsoDock boot-theme assets with dynamic ISO listing.
+- BIOS/UEFI payloads and retained upstream Secure Boot files.
+- USB automount handling fixed for mountpoint labels containing spaces.
+- `isodock --doctor` runtime/boot-integrity diagnostics.
+- Debian `.deb` build tooling.
+- Public-source governance files and CI.
+- Complete-source archive target that bundles the pinned upstream tree for binary-release compliance.
 
-## Hardware release gate
+## Important safety note
 
-Before calling the release hardware-certified stable, test the exact `.deb` on disposable USB media for:
+IsoDock performs destructive block-device operations during installation. Validate the selected USB device carefully and use disposable media for testing.
 
-- MBR installation and update.
-- GPT installation and update.
-- UEFI boot.
-- Secure Boot enrollment/boot path where supported by the target firmware.
-- Legacy BIOS boot if hardware is available.
-- Linux ISO and Windows ISO boot.
-- USB labels containing spaces.
-- Update without deleting existing ISO files.
-- At least one 1024x768-style firmware display and one widescreen firmware display.
+## Hardware QA
+
+Automated source/runtime/package checks are not a substitute for physical firmware testing. Before presenting a build as hardware-certified stable, test the exact release artifact across the scenarios in `PHYSICAL-QA-CHECKLIST.md`.

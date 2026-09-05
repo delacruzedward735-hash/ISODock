@@ -8,9 +8,9 @@ Recommends: dmsetup, zenity | libnotify-bin
 Conflicts: ventoy-linux-launcher, ventoy-linux-selfcontained, ventoy-linux-windows-ui, ventoy-linux-native-ui
 Replaces: ventoy-linux-launcher, ventoy-linux-selfcontained, ventoy-linux-windows-ui, ventoy-linux-native-ui
 Maintainer: CodeDev by Edward
-Homepage: https://myportfoliohub.online/
+Homepage: https://github.com/delacruzedward735-hash/ISODock
 Description: IsoDock bootable USB manager for Linux
  IsoDock provides a compact native GTK3 interface for installing and updating
- multiboot USB drives. It is powered by the Ventoy 1.1.17 open-source
- engine with independent Linux packaging, IsoDock desktop branding, integrity
+ multiboot USB drives. It is powered by the Ventoy 1.1.17 open-source engine
+ with independent Linux packaging, IsoDock desktop branding, integrity
  diagnostics, and an IsoDock boot-menu theme.
